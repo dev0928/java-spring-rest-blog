@@ -14,6 +14,11 @@ import java.util.stream.IntStream;
 
 @Component
 public class DatabaseLoader implements ApplicationRunner {
+
+    private final PostRepository postRepository;
+
+    private final AuthorRepository authorRepository;
+
     private final String[] templates = {
             "Smart Home %s", "Mobile %s - For When You're On he Go", "The %s - Your New Favorite Accessory"};
     private final String[] gadgets = {
@@ -21,18 +26,35 @@ public class DatabaseLoader implements ApplicationRunner {
     public List<Post> randomPosts = new ArrayList<>();
     public List<Author> authors = new ArrayList<>();
 
-    public DatabaseLoader() {
+    @Autowired
+    public DatabaseLoader(PostRepository postRepository, AuthorRepository authorRepository) {
+        this.postRepository = postRepository;
+        this.authorRepository = authorRepository;
     }
 
     @Override
     public void run(ApplicationArguments args) throws Exception {
+        authors.addAll(Arrays.asList(
+                new Author("sakur", "Saku", "Ramamoorthy", "password"),
+                new Author("jdoe", "John", "Doe", "password"),
+                new Author("jfisher", "Jill", "Fisher", "password"),
+                new Author("kfisher", "Kris", "Fisher", "password")
+        ));
+        authorRepository.saveAll(authors);
+
         IntStream.range(0,40).forEach(i->{
             String template = templates[i % templates.length];
             String gadget = gadgets[i % gadgets.length];
+            Author author = authors.get(i % authors.size());
 
             String title = String.format(template, gadget);
             Post post = new Post(title, "Lorem ipsum dolor sit amet, consectetur adipiscing elit… ");
+            post.setAuthor(author);
+            author.addPost(post);
+
             randomPosts.add(post);
         });
+        postRepository.saveAll(randomPosts);
+        authorRepository.saveAll(authors);
     }
 }
